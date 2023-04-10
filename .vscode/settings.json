@@ -1,5 +1,7 @@
 {
-    "terminal.integrated.shell.windows": "state",
+    "python.pythonPath": "C:\\Users\\mehrz\\anaconda3\\python.exe",
+    "python.terminal.activateEnvironment": true,
+    "terminal.integrated.shell.windows": "C:\\Windows\\System32\\cmd.exe",
     "terminal.integrated.shellArgs.windows": [
         "activate",
         "--confirm-exit-on-error",

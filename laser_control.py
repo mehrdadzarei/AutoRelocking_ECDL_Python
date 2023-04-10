@@ -42,7 +42,7 @@ class LaserControl:
             except :
                 pass
 
-    def getInput(self, port):
+    def getInput(self, port, noSmp = 1):
 
         with nidaqmx.Task() as task:
 
@@ -52,11 +52,11 @@ class LaserControl:
                 return -11
             
             try: 
-                return task.read()
+                return task.read(noSmp)
             except :
                 return -12
 
 # a = LaserControl()
-# print(a.getInput('Dev1/ai1'))
-# a.set_I('Dev2/ao2', 0.0)
-# a.set_Pzt('Dev2/ao0', 0.0)
+# print(a.getInput('Dev1/ai1', 10))
+# a.setOutput('Dev2/ao2', 0.0)
+# a.setOutput('Dev2/ao0', 0.0)

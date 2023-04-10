@@ -11,6 +11,7 @@
 
 import sys, time
 from inputimeout import inputimeout
+from datetime import datetime
 import json
 import threading
 import socket
@@ -19,7 +20,7 @@ import pandas as pd
 from scipy.signal import find_peaks
 import wavelength_meter
 from wlmConst import *
-import laser_control
+# import laser_control
 
 
 
@@ -33,8 +34,8 @@ class AutoRelocking:
         self.general = data['general'][0]
         self.path = self.general['path']
 
-        self.wlm = wavelength_meter.WavelengthMeter(dllpath = self.general['dllpath'], WlmVer = int(self.general['WlmVer']))
-        self.lc = laser_control.LaserControl()
+        # self.wlm = wavelength_meter.WavelengthMeter(dllpath = self.general['dllpath'], WlmVer = int(self.general['WlmVer']))
+        # self.lc = laser_control.LaserControl()
         
         # [name, target frequency, PiezoRelockMode, CurrentRelockMode, update, portNamePiezo, portNameCurrent, portNameInput]
         self.chName = data['chName'][1]
@@ -61,13 +62,29 @@ class AutoRelocking:
         self.noP_diff_std = 7
         # self.freq_diff_thr = 0.0001
         # self.freq_diff_std = 0.00005
-        self.relock = {'time': [], 'freq': [], 'trans': []}
-        self.relock_event = {'time': [], 'long': []}
+        self.relock = {'1': {'time': [], 'freq': [], 'trans': []},
+                       '2': {'time': [], 'freq': [], 'trans': []},
+                       '3': {'time': [], 'freq': [], 'trans': []},
+                       '4': {'time': [], 'freq': [], 'trans': []},
+                       '5': {'time': [], 'freq': [], 'trans': []},
+                       '6': {'time': [], 'freq': [], 'trans': []},
+                       '7': {'time': [], 'freq': [], 'trans': []},
+                       '8': {'time': [], 'freq': [], 'trans': []}}
+        self.relock_event = {'1': {'time': [], 'long': []},
+                             '2': {'time': [], 'long': []},
+                             '3': {'time': [], 'long': []},
+                             '4': {'time': [], 'long': []},
+                             '5': {'time': [], 'long': []},
+                             '6': {'time': [], 'long': []},
+                             '7': {'time': [], 'long': []},
+                             '8': {'time': [], 'long': []}}
+        self.daych = 0
+        self.save_data()
         self.no_rel = 0
         self.trans = 1
 
-        self.wlm.run(action = 'show')    # show or hide
-        self.wlm.measurement(cCtrlStartMeasurement)   # state : cCtrlStopAll, cCtrlStartMeasurement
+        # self.wlm.run(action = 'show')    # show or hide
+        # self.wlm.measurement(cCtrlStartMeasurement)   # state : cCtrlStopAll, cCtrlStartMeasurement
 
     def close (self):
 
@@ -82,16 +99,52 @@ class AutoRelocking:
         json_string = json.dumps(data, indent=4)
 
         # print(json_string)
-        with open('setting.json', 'w') as outfile:
-            outfile.write(json_string)
+        # with open('setting.json', 'w') as outfile:
+        #     outfile.write(json_string)
         # print("done")
 
-        relock_data = pd.DataFrame(data=self.relock)
-        relock_data_event = pd.DataFrame(data=self.relock_event)
+        self.save_data()
 
-        relock_data.to_csv('relock_data.csv', index=False)
-        relock_data_event.to_csv('relock_data_event.csv', index=False)
+    def save_data(self):
 
+        if datetime.today().day != self.daych:
+
+            self.daych = datetime.today().day
+            headerch = True
+        else:
+            headerch = False
+
+        t = datetime.now()
+        
+        for i in self.chName:
+
+            if self.chName[i][2] == 1 or self.chName[i][3] == 1:
+        
+                relock_data = pd.DataFrame(data=self.relock[i])
+                relock_data_event = pd.DataFrame(data=self.relock_event[i])
+
+                name1 = i + '_relock_data_' + t.strftime('%m_%d_%Y') + '.csv'
+                name2 = i + '_relock_data_event_' + t.strftime('%m_%d_%Y') + '.csv'
+                relock_data.to_csv(name1, index=False, mode='a', header=headerch)
+                relock_data_event.to_csv(name2, index=False, mode='a', header=headerch)
+        
+        self.relock = {'1': {'time': [], 'freq': [], 'trans': []},
+                       '2': {'time': [], 'freq': [], 'trans': []},
+                       '3': {'time': [], 'freq': [], 'trans': []},
+                       '4': {'time': [], 'freq': [], 'trans': []},
+                       '5': {'time': [], 'freq': [], 'trans': []},
+                       '6': {'time': [], 'freq': [], 'trans': []},
+                       '7': {'time': [], 'freq': [], 'trans': []},
+                       '8': {'time': [], 'freq': [], 'trans': []}}
+        self.relock_event = {'1': {'time': [], 'long': []},
+                             '2': {'time': [], 'long': []},
+                             '3': {'time': [], 'long': []},
+                             '4': {'time': [], 'long': []},
+                             '5': {'time': [], 'long': []},
+                             '6': {'time': [], 'long': []},
+                             '7': {'time': [], 'long': []},
+                             '8': {'time': [], 'long': []}}
+    
     def setReference(self):
 
         for i in self.refDataInfo:
@@ -143,9 +196,9 @@ class AutoRelocking:
             val = self.lc.getInput(self.chName[str(ch)][7], 100)
             self.trans = np.average(val)
         
-        self.relock['freq'].append(self.record)
-        self.relock['time'].append(time.time())
-        self.relock['trans'].append(self.trans)
+        self.relock[str(ch)]['freq'].append(self.record)
+        self.relock[str(ch)]['time'].append(time.time())
+        self.relock[str(ch)]['trans'].append(self.trans)
         # self.freq_list.append(self.freqCh)
         # self.time_list.append(time.ctime())
     
@@ -374,10 +427,10 @@ class AutoRelocking:
                 self.diff_piezo_drift = 1
                 self.diff_t_drift = 1
 
-            self.relock_event['time'].append(time.time())
             t0 = time.time()
+            self.relock_event[str(ch)]['time'].append(t0)
             self.piezo_scan(ch)
-            self.relock_event['long'].append((time.time() - t0))
+            self.relock_event[str(ch)]['long'].append((time.time() - t0))
         # else:
         #     self.pztState = False
     
@@ -411,9 +464,17 @@ class AutoRelocking:
 
     def update(self):
 
+        t0 = time.time()
+        
         while True:
 
-            self.analyse()
+            # save data every x s
+            if (time.time() - t0) >= 60:
+
+                self.save_data()
+                t0 = time.time()
+
+            # self.analyse()
 
             # time.sleep(5)
             try:
@@ -429,7 +490,7 @@ class AutoRelocking:
 if __name__ == '__main__':
 
     app = AutoRelocking()
-    app.setReference()
+    # app.setReference()
 
     app.update()
 

@@ -18,9 +18,9 @@ import socket
 import numpy as np
 import pandas as pd
 from scipy.signal import find_peaks
-import wavelength_meter
-from wlmConst import *
-# import laser_control
+import Client
+# from wlmConst import *
+import laser_control
 
 
 
@@ -34,8 +34,7 @@ class AutoRelocking:
         self.general = data['general'][0]
         self.path = self.general['path']
 
-        # self.wlm = wavelength_meter.WavelengthMeter(dllpath = self.general['dllpath'], WlmVer = int(self.general['WlmVer']))
-        # self.lc = laser_control.LaserControl()
+        self.lc = laser_control.LaserControl()
         
         # [name, target frequency, PiezoRelockMode, CurrentRelockMode, update, portNamePiezo, portNameCurrent, portNameInput]
         self.chName = data['chName'][1]
@@ -83,8 +82,15 @@ class AutoRelocking:
         self.no_rel = 0
         self.trans = 1
 
-        # self.wlm.run(action = 'show')    # show or hide
-        # self.wlm.measurement(cCtrlStartMeasurement)   # state : cCtrlStopAll, cCtrlStartMeasurement
+        for i in self.chName:
+            if self.chName[i][9] == 1:
+
+                # self.wlm = wavelength_meter.WavelengthMeter(dllpath = self.general['dllpath'], WlmVer = int(self.general['WlmVer']))
+                self.wlm = Client.wlmClient()
+                self.wlm.connect(ip = self.general['IP'], port = self.general['PORT'])
+                # self.wlm.run(action = 'show')    # show or hide
+                # self.wlm.measurement(cCtrlStartMeasurement)   # state : cCtrlStopAll, cCtrlStartMeasurement
+                break
 
     def close (self):
 
@@ -99,11 +105,12 @@ class AutoRelocking:
         json_string = json.dumps(data, indent=4)
 
         # print(json_string)
-        # with open('setting.json', 'w') as outfile:
-        #     outfile.write(json_string)
+        with open('setting.json', 'w') as outfile:
+            outfile.write(json_string)
         # print("done")
 
         self.save_data()
+        self.wlm.disconnect()
 
     def save_data(self):
 
@@ -123,8 +130,8 @@ class AutoRelocking:
                 relock_data = pd.DataFrame(data=self.relock[i])
                 relock_data_event = pd.DataFrame(data=self.relock_event[i])
 
-                name1 = i + '_relock_data_' + t.strftime('%m_%d_%Y') + '.csv'
-                name2 = i + '_relock_data_event_' + t.strftime('%m_%d_%Y') + '.csv'
+                name1 = 'data/' + i + '_relock_data_' + t.strftime('%m_%d_%Y') + '.csv'
+                name2 = 'data/' + i + '_relock_data_event_' + t.strftime('%m_%d_%Y') + '.csv'
                 relock_data.to_csv(name1, index=False, mode='a', header=headerch)
                 relock_data_event.to_csv(name2, index=False, mode='a', header=headerch)
         
@@ -166,32 +173,36 @@ class AutoRelocking:
     
     def getInfo(self, ch):
 
-        self.wlm.setSwitcherChannel(ch)
+        # getting wavemetere info
+        if self.chName[str(ch)][9] == 1:
 
-        self.freqCh = self.wlm.getFrequency(ch)
-        if self.freqCh == -4:
-            
-            self.wlm.setExposureMode(ch, True)
-            time.sleep(0.1)
-            self.wlm.setExposureMode(ch, False)
+            # self.wlm.setSwitcherChannel(ch)
+
             self.freqCh = self.wlm.getFrequency(ch)
+            if self.freqCh == -4:
+                
+                self.wlm.setExpoAuto(1)
+                time.sleep(0.1)
+                self.wlm.setExpoAuto(0)
+                self.freqCh = self.wlm.getFrequency(ch)
 
-        diff = abs(float(self.chName[str(ch)][1]) - self.freqCh)
-        if diff < 50:
-            
-            self.freq_diff = diff
-            self.record = float(self.chName[str(ch)][1]) - self.freqCh
-            if self.refDataInfo[str(ch)][3] == 1:
+            diff = abs(float(self.chName[str(ch)][1]) - float(self.freqCh))
+            if diff < 50:
+                
+                self.freq_diff = diff
+                self.record = float(self.chName[str(ch)][1]) - float(self.freqCh)
+                if self.refDataInfo[str(ch)][3] == 1:
 
-                spec = self.wlm.spectrum(ch)
-                peaksIndSpec, peaksHSpec = find_peaks(spec, height = self.height_thr, distance = self.distance_thr)
-                self.noPeaksSpec = len(peaksIndSpec)
-                self.noPeaks_diff = abs(self.noPeaksSpec - self.refDataInfo[str(ch)][0])
-        else:
-            self.freq_diff = -1
-            self.noPeaks_diff = -1
+                    spec = self.wlm.spectrum(ch)
+                    peaksIndSpec, peaksHSpec = find_peaks(spec, height = self.height_thr, distance = self.distance_thr)
+                    self.noPeaksSpec = len(peaksIndSpec)
+                    self.noPeaks_diff = abs(self.noPeaksSpec - self.refDataInfo[str(ch)][0])
+            else:
+                self.freq_diff = -1
+                self.noPeaks_diff = -1
 
-        if self.chName['7'][2] == 1:
+        # getting cavity info
+        if self.chName[str(ch)][8] == 1:
 
             val = self.lc.getInput(self.chName[str(ch)][7], 100)
             self.trans = np.average(val)
@@ -474,7 +485,7 @@ class AutoRelocking:
                 self.save_data()
                 t0 = time.time()
 
-            # self.analyse()
+            self.analyse()
 
             # time.sleep(5)
             try:

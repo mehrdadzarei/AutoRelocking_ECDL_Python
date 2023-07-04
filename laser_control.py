@@ -28,12 +28,13 @@ class LaserControl:
         # self.set_Pzt('6', 0)
         # self.RSE = 10083
 
-    def setOutput(self, port, val):
+    def setOutput(self, port, val, min_val_ni=-10.0, max_val_ni=10.0):
 
         with nidaqmx.Task() as task:
 
             try:
-                task.ao_channels.add_ao_voltage_chan(port)
+                # min_val and max_val must be set to avoid error. some NIs have min 0 and max 5
+                task.ao_channels.add_ao_voltage_chan(port, min_val=min_val_ni, max_val=max_val_ni)
             except nidaqmx.DaqError:
                 return False
             

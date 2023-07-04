@@ -9,7 +9,7 @@
 
 
 
-import sys, time
+import os, time
 from inputimeout import inputimeout
 from datetime import datetime
 import json
@@ -119,12 +119,12 @@ class AutoRelocking:
 
     def save_data(self):
 
-        if datetime.today().day != self.daych:
+        # if datetime.today().day != self.daych:
 
-            self.daych = datetime.today().day
-            headerch = True
-        else:
-            headerch = False
+        #     self.daych = datetime.today().day
+        #     headerch = True
+        # else:
+        #     headerch = False
 
         data = {'general': [self.general], 
                 'chName' : [{'description':'[name, target frequency, PiezoRelockMode (0 or 1), CurrentRelockMode (0 or 1), update (0 or 1), portNamePiezo, portNameCurrent, portNameInput, cavityLock, wavemeterLock, laserDrift]'},
@@ -152,6 +152,10 @@ class AutoRelocking:
             
                 name1 = 'data/' + i + '_relock_data_' + t.strftime('%m_%d_%Y') + '.csv'
                 name2 = 'data/' + i + '_relock_data_event_' + t.strftime('%m_%d_%Y') + '.csv'
+                if os.path.isfile(name1) or os.path.isfile(name2):
+                    headerch = False
+                else:
+                    headerch = True
                 relock_data.to_csv(name1, index=False, mode='a', header=headerch)
                 relock_data_event.to_csv(name2, index=False, mode='a', header=headerch)
                 

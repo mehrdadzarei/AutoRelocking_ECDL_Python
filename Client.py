@@ -250,6 +250,26 @@ class wlmClient:
         elif msg == '-1':
             self.client.close()
             return -30          # connection is closed
+        
+    def keepChannel(self, relocking = 0):
+
+        obj_send = {"WLM_RUN": 1, "RELOCKING": relocking}
+        data = json.dumps(obj_send)
+        message = data.encode(self.format)
+        err = self.my_send(message)
+
+        if err == 0:
+            return -31          # retry again
+        elif err == -1:
+            self.client.close()
+            return -30          # connection is closed
+
+        msg = self.my_recv()
+        if msg == '0':
+            return -31          # retry again
+        elif msg == '-1':
+            self.client.close()
+            return -30          # connection is closed
     
     def setSwitchMode(self, mode = 1):
 

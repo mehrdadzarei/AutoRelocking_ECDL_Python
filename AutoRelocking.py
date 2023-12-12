@@ -57,7 +57,6 @@ class AutoRelocking:
         self.diff_piezo_drift = 1.0
         self.diff_t_drift = 0
         self.freq_diff = 0.0
-        self.tranLevel = 0.3
         self.record = 0.0
         self.noPeaks_diff = 0
         self.height_thr = 100
@@ -101,6 +100,7 @@ class AutoRelocking:
                 self.wlm = Client.wlmClient(time_out=60)
                 self.wlm.connect(ip = self.general['IP'], port = self.general['PORT'])
                 self.wlm.setPrec(self.general['WLMPrec'])
+                self.wlm.keepChannel(0)
 
                 connected = True
             
@@ -131,7 +131,7 @@ class AutoRelocking:
                             self.chName],
                 'IParam' : [{'description':'[min, max, last_value, cur_drift0, cur_drift1, drift_no]'}, self.IParam], 
                 'PztParam' : [{'description':'[min, max, last_value, piezo_drift0, piezo_drift1, t_drift0, t_drift1, drift_no, t1Drift, firstDrift_t]'}, self.PztParam],
-                'refDataInfo' : [{'description':'[no peaks diff, freq_diff_thr, freq_diff_std]'}, self.refDataInfo]}
+                'refDataInfo' : [{'description':'[no peaks diff, freq_diff_thr, freq_diff_std, transmission level]'}, self.refDataInfo]}
 
         # indent is used to be readable by human but will increase the size of file and is not recomended for transfering data
         json_string = json.dumps(data, indent=4)
@@ -196,10 +196,14 @@ class AutoRelocking:
                 for i in self.chName:
                     if self.chName[i][8] == 1 and (self.chName[i][2] == 1 or self.chName[i][3] == 1):
 
-                        val = self.lc.getInput(self.chName[i][7], 100)
+                        val = self.lc.getInput(self.chName[i][7], 500)
                         self.transList[i] = np.average(val)
 
-                        if (self.transList[i] < self.tranLevel and self.transList[i] > -1):
+                        # to avoid frequently relocking on ch 8 
+                        if i == "8":
+                            self.transList[i] *= 1.4
+
+                        if (self.transList[i] < self.refDataInfo[i][3] and self.transList[i] > -1):
 
                             # print(self.transList[i])
                             # wait till other locking is done
@@ -283,14 +287,14 @@ class AutoRelocking:
                 self.noPeaks_diff = -1
 
         # getting cavity info
-        if self.chName[str(ch)][8] == 1:
+        if self.relocking:
 
-            if self.relocking:
+            if self.chName[str(ch)][8] == 1:
 
                 val = self.lc.getInput(self.chName[str(ch)][7], 100)
                 self.trans = np.average(val)
-            else:
-                self.trans = self.transList[str(ch)]
+        else:
+            self.trans = self.transList[str(ch)]
         
         self.relock[str(ch)]['freq'].append(self.record)
         self.relock[str(ch)]['time'].append(time.time())
@@ -447,9 +451,11 @@ class AutoRelocking:
         len_right_scan = np.floor((max_scan - piezo_last_value) / self.piezo_step)
         len_scan = np.floor((max_scan - min_scan) * 2 / self.piezo_step)
         curr_val = 0.0
+        prev_curr_val = piezo_last_value
         prev_freq_diff = self.freq_diff
         std_freq = self.refDataInfo[str(ch)][1] - self.refDataInfo[str(ch)][2]
         i = 0
+        prev_tran = self.refDataInfo[str(ch)][3]
 
         # check direction base on laser drift, if negative change direction
         if self.diff_piezo_drift < 0:
@@ -458,25 +464,51 @@ class AutoRelocking:
 
         while i < len_scan:
 
-            if self.freq_diff < std_freq and self.trans > self.tranLevel:
+            if self.freq_diff < std_freq and self.trans > self.refDataInfo[str(ch)][3]:
                 
-                self.PztParam[str(ch)][2] = curr_val
-                return 2        # to start scaning in small range
+                # check to get higher transmision for clock laser only
+                # if self.chName[str(ch)][8] == 1 and self.trans > prev_tran:
+                #     # print(self.trans)
+                #     prev_tran = self.trans
+                #     if ch == 7:
+
+                #         self.PztParam[str(ch)][2] = curr_val
+                #         return 2        # to start scaning in small range
+
+                # # as transmission reduce, back to last voltge and stop it
+                # elif self.chName[str(ch)][8] == 1 and self.trans < prev_tran:
+
+                #     self.lc.setOutput(self.chName[str(ch)][5], prev_curr_val)
+                #     self.PztParam[str(ch)][2] = curr_val
+                #     return 2        # to start scaning in small range
+                # elif self.chName[str(ch)][8] == 0:
+
+                    self.PztParam[str(ch)][2] = curr_val
+                    return 2        # to start scaning in small range
             
-            # # if it is not on cavity lock check these
-            # if self.chName[str(ch)][8] == 0:
+            # if it is on wavemeter lock check these
+            if self.chName[str(ch)][9] == 1:
                     
-            #     if self.freq_diff < std_freq * 2 and per == 0.2:    # very good condition
+                if self.freq_diff < std_freq * 3:    # very good condition
                     
-            #         self.PztParam[str(ch)][2] = curr_val
-            #         return 2
-            #     elif self.freq_diff < std_freq * 4 and per == 0.4:    # good condition
+                    self.piezo_step = 0.001
+                    # self.PztParam[str(ch)][2] = curr_val
+                    # return 2
+                elif self.freq_diff < std_freq * 4:    # good condition
                     
-            #         return 3
-            #     elif self.freq_diff < std_freq * 6 and per == 2.0:    # bad condition
+                    self.piezo_step = 3 * 0.001
+                    # return 3
+                elif self.freq_diff < std_freq * 6:    # bad condition
+
+                    self.piezo_step = 7 * 0.001
+                    # return 3
+                else:    # bad condition
                     
-            #         return 4
+                    self.piezo_step = 20 * 0.001
+                    # return 4
             
+            prev_curr_val = curr_val
+
             if i < len_right_scan:
             
                 curr_val = piezo_last_value + i * self.piezo_step
@@ -524,6 +556,10 @@ class AutoRelocking:
             if not self.relocking:
                 break
             self.getInfo(ch)
+            # wavemeter is not conected
+            if self.freqCh == -31:
+                print("wavemeter is not conected")
+                return 2
             i += 1
 
         return 1
@@ -539,7 +575,7 @@ class AutoRelocking:
         while self.relocking and repeat > 0:
 
             if self.freq_diff < (self.refDataInfo[str(ch)][1] - self.refDataInfo[str(ch)][2]) \
-                and self.trans > self.tranLevel:
+                and self.trans > self.refDataInfo[str(ch)][3]:
                 break
 
             # if is not able to find the Mode, stop searching
@@ -620,6 +656,11 @@ class AutoRelocking:
     
     def locking(self, ch):
 
+        self.communicating = True
+        self.wlm.keepChannel(0)
+        self.wlm.keepChannel(1)
+        self.communicating = False
+
         self.iCurrVal = self.IParam[ch][2]
         self.pztCurrVal = self.PztParam[ch][2]
         # scan_range = 30
@@ -658,13 +699,13 @@ class AutoRelocking:
             self.current_scan(int(ch))
             # save new refrence data
             if self.chName[ch][3] == 1 and self.freq_diff < self.refDataInfo[str(ch)][1] \
-                and self.trans > self.tranLevel and self.noPeaks_diff < self.noP_diff_thr:
+                and self.trans > self.refDataInfo[str(ch)][3] and self.noPeaks_diff < self.noP_diff_thr:
 
                 self.refDataInfo[ch][0] = self.noPeaksSpec
             
 
         # check frequency target
-        if self.pztState and (self.freq_diff >= self.refDataInfo[ch][1] or (self.trans < self.tranLevel and self.trans > -1)):
+        if self.pztState and (self.freq_diff >= self.refDataInfo[ch][1] or (self.trans < self.refDataInfo[str(ch)][3] and self.trans > -1)):
             
             # drift_no 
             if self.PztParam[ch][7] >= 2:
@@ -688,6 +729,10 @@ class AutoRelocking:
 
         self.relockingCavity = False
         self.relocking = False
+
+        self.communicating = True
+        self.wlm.keepChannel(2)
+        self.communicating = False
     
     def laserDrift(self):
 
@@ -717,7 +762,7 @@ class AutoRelocking:
                     else:
                         curr_val = self.PztParam[i][2] + self.piezo_step
                     
-                    print('Drift ' + self.chName[i][0])
+                    # print('Drift ' + self.chName[i][0])
                     self.lc.setOutput(self.chName[i][5], curr_val)
                     self.PztParam[i][2] = curr_val
                     self.PztParam[i][8] = time.time()
@@ -727,6 +772,11 @@ class AutoRelocking:
                         self.PztParam[i][9] = 5
     
     def analyse(self):
+
+        self.communicating = True
+        self.wlm.keepChannel(0)
+        self.wlm.keepChannel(1)
+        self.communicating = False
 
         for i in self.chName:
 
@@ -742,15 +792,24 @@ class AutoRelocking:
                     # if it is not on locking process go inside
                     if not self.relocking:
                         
+                        self.communicating = True
+                        self.wlm.keepChannel(2)
+                        self.communicating = False
+
                         self.relocking = True
                         self.no_rel += 1
-                        print('start relocking... ', self.no_rel, ' times', ' at ', time.ctime())
+                        print(i, ': start relocking... ', self.no_rel, ' times', ' at ', time.ctime())
                         # start thread for locking
                         locking_thread = threading.Thread(target=self.locking, args=(i))
                         locking_thread.start()
                         break
                     else:
                         break
+        if not self.relocking:
+
+            self.communicating = True
+            self.wlm.keepChannel(2)
+            self.communicating = False
 
     def update(self):
 
@@ -774,7 +833,7 @@ class AutoRelocking:
 
                 self.relocking = True
                 self.no_rel += 1
-                print('start relocking... ', self.no_rel, ' times', ' at ', time.ctime())
+                print(self.relockingCh, ': start relocking... ', self.no_rel, ' times', ' at ', time.ctime())
                 # start thread for locking
                 locking_thread = threading.Thread(target=self.locking, args=(self.relockingCh))
                 locking_thread.start()
@@ -850,6 +909,9 @@ class AutoRelocking:
             self.monitoring = False
             # wait for the thread to finish
             cavity_thread.join()
+            
+            print("transmition level ch 7: ", self.transList["7"])
+            print("transmition level ch 8: ", self.transList["8"])
         elif self.relocking:
             self.relocking = False
         

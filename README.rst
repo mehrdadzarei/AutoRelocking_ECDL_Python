@@ -166,95 +166,95 @@ At this time, the safe range would be reduced by this parameter to let the auto 
 
 Part of the JSON file is written below:
 
-```json
-{
-    "general": [
-        {
-            "path": "C:\\Users\\stront\\Mehrdad\\
-                AutoRelocking_ECDL_Python",
-            "IP": "192.168.3.212",
-            "PORT": 5015,
-            "WLMPrec": 4
-        }
-    ],
-    "chName": [
-        {
-            "description": "[name, target frequency, 
-                PiezoRelockMode (0 or 1), 
-                CurrentRelockMode (0 or 1), 
-                update (0 or 1), portNamePiezo, 
-                portNameCurrent, portNameInput, 
-                cavityLock, wavemeterLock, laserDrift]"
-        },
-        {
-            "5": [
-                "5: Re-Pumper(679)", # optional name
-                "441.3327",          # target frequency
-                1,         # send feedback to piezo set on 1
-                0,         # send feedback to current set on 1
-                0,         # update in each cycle set on 1
-                "Dev2/ao2",   # port name for piezo
-                "Dev2/ao3",   # port name for current
-                "",           # port name for input
-                0,            # for cavity lock set on 1
-                1,            # for wavemeter lock set on 1
-                1             # to apply laser drift set on 1
-            ],
-        }
-    ],
-    "IParam": [
-        {
-            "description": "[min, max, last_value, 
-                cur_drift0, cur_drift1, drift_no]"
-        },
-        {
-            "5": [
-                -1.0,       # minimum scan range value
-                1.0,        # maximum scan range value
-                0,          # don't change
-                0.0,        # don't change
-                1.0,        # don't change
-                0.0         # don't change
-            ],
-        }
-    ],
-    "PztParam": [
-        {
-            "description": "[min, max, last_value, 
-                piezo_drift0, piezo_drift1, t_drift0, 
-                t_drift1, drift_no, t1Drift, firstDrift_t]"
-        },
-        {
-            "5": [
-                -3.0,       # minimum scan range value
-                3.0,        # maximum scan range value
-                0,          # don't change
-                0.0,        # don't change
-                1.0,        # don't change
-                0.0,        # don't change
-                0.0,        # don't change
-                0,          # don't change
-                0.0,        # don't change
-                60          # don't change
-            ],
-        }
-    ],
-    "refDataInfo": [
-        {
-            "description": "[no peaks diff, freq_diff_thr, 
-                freq_diff_std, transmission level]"
-        },
-        {
-            "5": [
-                0,          # don't change
-                5e-05,      # safe range
-                4e-05,      # reduce safe range
-                0           # cavity transmission level
-            ],
-        }
-    ]
-}
-```
+.. code-block:: JSON
+
+    {
+        "general": [
+            {
+                "path": "C:\\Users\\stront\\Mehrdad\\
+                    AutoRelocking_ECDL_Python",
+                "IP": "192.168.3.212",
+                "PORT": 5015,
+                "WLMPrec": 4
+            }
+        ],
+        "chName": [
+            {
+                "description": "[name, target frequency, 
+                    PiezoRelockMode (0 or 1), 
+                    CurrentRelockMode (0 or 1), 
+                    update (0 or 1), portNamePiezo, 
+                    portNameCurrent, portNameInput, 
+                    cavityLock, wavemeterLock, laserDrift]"
+            },
+            {
+                "5": [
+                    "5: Re-Pumper(679)", # optional name
+                    "441.3327",          # target frequency
+                    1,         # send feedback to piezo set on 1
+                    0,         # send feedback to current set on 1
+                    0,         # update in each cycle set on 1
+                    "Dev2/ao2",   # port name for piezo
+                    "Dev2/ao3",   # port name for current
+                    "",           # port name for input
+                    0,            # for cavity lock set on 1
+                    1,            # for wavemeter lock set on 1
+                    1             # to apply laser drift set on 1
+                ],
+            }
+        ],
+        "IParam": [
+            {
+                "description": "[min, max, last_value, 
+                    cur_drift0, cur_drift1, drift_no]"
+            },
+            {
+                "5": [
+                    -1.0,       # minimum scan range value
+                    1.0,        # maximum scan range value
+                    0,          # don't change
+                    0.0,        # don't change
+                    1.0,        # don't change
+                    0.0         # don't change
+                ],
+            }
+        ],
+        "PztParam": [
+            {
+                "description": "[min, max, last_value, 
+                    piezo_drift0, piezo_drift1, t_drift0, 
+                    t_drift1, drift_no, t1Drift, firstDrift_t]"
+            },
+            {
+                "5": [
+                    -3.0,       # minimum scan range value
+                    3.0,        # maximum scan range value
+                    0,          # don't change
+                    0.0,        # don't change
+                    1.0,        # don't change
+                    0.0,        # don't change
+                    0.0,        # don't change
+                    0,          # don't change
+                    0.0,        # don't change
+                    60          # don't change
+                ],
+            }
+        ],
+        "refDataInfo": [
+            {
+                "description": "[no peaks diff, freq_diff_thr, 
+                    freq_diff_std, transmission level]"
+            },
+            {
+                "5": [
+                    0,          # don't change
+                    5e-05,      # safe range
+                    4e-05,      # reduce safe range
+                    0           # cavity transmission level
+                ],
+            }
+        ]
+    }
 
 In the auto relocking source code folder, there is a batch file to run the program with the name 'run_AutoRelocking.bat'. 
 Here, similar to the server program, the operator needs to modify this batch file, but only the activated path and path of the program. 

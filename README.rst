@@ -48,7 +48,7 @@ In these scenarios, relocking is performed using only a wavelength meter.
   for images with caption write figure
   without caption use image
 
-.. figure:: doc/img/fig1.png
+.. figure:: doc/img/fig11.png
   :width: 1000
   :align: center
   :alt: Schematic diagram of the auto relocking system in the experiment.

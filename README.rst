@@ -48,7 +48,7 @@ In these scenarios, relocking is performed using only a wavelength meter.
   for images with caption write figure
   without caption use image
 
-.. figure:: doc/img/3.3 schematic Auto Relocking ECDL.png
+.. figure:: doc/img/fig1.png
   :width: 1000
   :align: center
   :alt: Schematic diagram of the auto relocking system in the experiment.
@@ -95,7 +95,7 @@ The other laser is 689 nm; this laser needs to be locked first by an ultra-stabl
 
 The experimental setup is shown in Fig. 2. The NI DAQ output in part a is connected to the laser driver in part b from the analog interface module. The laser beam from the laser diode in part c is coupled to an optical fiber and sent to the wavemeter in part d of the figure.
 
-.. figure:: doc/img/3.3 auto setup.png
+.. figure:: doc/img/fig2.png
   :width: 1000
   :align: center
   :alt: Schematic diagram of the auto relocking system in the experiment.
@@ -121,7 +121,7 @@ The port number can be any number, the operator can leave as a default, but if a
 The dll path of the wavemeter is usually the same, but if it is different on the system, find that path and paste it here. 
 The last one is the wavemeter version, which depends on the model of the wavemeter the operator is using. 
 
-.. figure:: doc/img/server program.png
+.. figure:: doc/img/fig3.png
   :width: 1000
   :align: center
   :alt: Finding the IP address for the server and modifying the batch file.
@@ -131,7 +131,7 @@ The last one is the wavemeter version, which depends on the model of the wavemet
 After running the server, if the server starts listening, a message will be printed that the server is listening on this IP address and port number, as shown in Fig. 4. 
 This IP address and port number should be set in the JSON file to let the auto relocking program as a client connect to the server and get information from the wavemeter. 
 
-.. figure:: doc/img/3.4 auto wavemeter server.jpg
+.. figure:: doc/img/fig4.jpg
   :width: 1000
   :align: center
   :alt: Running server on the wavemeter's PC.
@@ -264,7 +264,7 @@ Also, a status would be printed to let the operators know.
 For example, if one of the lasers is in the mode of relocking, a message shows that this laser is relocking; therefore, the wavemeter is locked on that channel. 
 Alternatively, if relocking is not successful, it will written, and that laser will not be checked for relocking after that.
 
-.. figure:: doc/img/3.4 auto relocking program.jpg
+.. figure:: doc/img/fig5.jpg
   :width: 1000
   :align: center
   :alt: Auto relocking program when it is running.
@@ -279,7 +279,7 @@ Relocking is done only by the wavemeter with a target frequency set on 423.91355
 In this 12 minutes test, as it is shown two times laser got unlocked intentionally by changing the piezo voltage knob on the laser driver and quickly relocked by the program. 
 Relocking is started when the frequency is farther than 50 MHz or going outside of the green range. 
 
-.. figure:: doc/img/3.5 relock_data_707.png
+.. figure:: doc/img/fig6.png
   :width: 1000
   :align: center
   :alt: Relocking procedure by wavemeter for 707 nm ECDL.
@@ -295,7 +295,7 @@ As transmission is dropped, relocking is started.
 As it is evident in this laser, which is locked first by an ultra-stable cavity, the frequency of the laser beam is stable, and there is not that much drift in the frequency.
 However, in the previous result, in which the 707 nm laser is locked only by the wavemeter, the drift is seen.
 
-.. figure:: doc/img/3.5 relock_data_689.png
+.. figure:: doc/img/fig7.png
   :width: 1000
   :align: center
   :alt: Relocking procedure by wavemeter and cavity for 689 nm ECDL.

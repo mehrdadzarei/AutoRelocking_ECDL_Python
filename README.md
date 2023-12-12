@@ -1,11 +1,3 @@
-.. 
-  comments
-  for new line write |
-  for images with caption write figure
-  without caption use image
-
-
-
 Auto Relocking ECDL using Python
 ========================================
 
@@ -48,6 +40,12 @@ Locking to the optical cavity is crucial in subsystems requiring a narrow spectr
 The wavelength meter is pivotal in initial frequency tuning to ensure tuning with the correct cavity mode and absolute target frequency. 
 For some lasers, like repumper lasers, stabilization to within tens of MHz suffices. 
 In these scenarios, relocking is performed using only a wavelength meter.
+
+.. 
+  comments
+  for new line write |
+  for images with caption write figure
+  without caption use image
 
 .. figure:: doc/img/3.3 schematic Auto Relocking ECDL.png
   :width: 1000
